@@ -7,38 +7,50 @@ public class FileClient {
     public static void main(String[] args) {
         String hostname = "localhost";
         int port = 5000;
+        int bufferSize = 1024;
         String fileName = "file.txt";
         String filePath = "C:/Users/Morte/IdeaProjects/ArrayListLinkedListSetMap/NetworkCommunication/src/FileTransfer/Server/" + fileName;
 
         File file = new File(filePath);
 
+        if (file.length() > bufferSize) {
+            System.out.println("File size exceeds the buffer limit of " + bufferSize + " bytes.");
+            return;
+        }
+
         try (Socket socket = new Socket(hostname, port)) {
-            FileInputStream fileInputStream = new FileInputStream(file);
-            BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+            try (FileInputStream fileInputStream = new FileInputStream(file);
+                 BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+                 OutputStream outputStream = socket.getOutputStream();
+                 PrintWriter printWriter = new PrintWriter(outputStream, true)) {
 
-            // Send filnavn til serveren
-            OutputStream outputStream = socket.getOutputStream();
-            PrintWriter printWriter = new PrintWriter(outputStream, true);
-            printWriter.println(file.getName());
+                // Send file name to the server
+                printWriter.println(file.getName());
 
-            // Send filens størrelse til serveren
-            printWriter.println(file.length());
+                // Send file size to the server
+                printWriter.println(file.length());
 
-            // Send filens data til serveren
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-            while ((bytesRead = bufferedInputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
+                // Send file data to the server
+                byte[] buffer = new byte[bufferSize];
+                int bytesRead;
+                while ((bytesRead = bufferedInputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+
+                outputStream.flush(); // Make sure all data is sent
+                System.out.println("File has been sent to the server.");
+
             }
 
-            bufferedInputStream.close();
-            System.out.println("File has been sent to client.");
-
-            // Slet filen fra klienten efter overførsel
-            file.delete(); // Sletter filen uden at tjekke resultatet
+            // Remove the file
+            if (file.delete()) {
+                System.out.println("File has been deleted from the server.");
+            } else {
+                System.out.println("Failed to delete the file from the server.");
+            }
 
         } catch (IOException ex) {
-            System.out.println("Failed to move the file, does the (" + file.getName() + ") exist?");
+            System.out.println("Failed to move the file, does the (" + file.getName() + ") exist, or has the maximum of bytes been reached");
         }
     }
 }

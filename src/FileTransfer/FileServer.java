@@ -7,47 +7,62 @@ import java.net.Socket;
 public class FileServer {
     public static void main(String[] args) {
         int port = 5000;
+        int bufferSize = 1024; // Maksimal filstørrelse
 
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.println("Server is listening on port " + port);
-            Socket socket = serverSocket.accept();
-            System.out.println("Connection successful");
+            try (Socket socket = serverSocket.accept()) {
+                System.out.println("Connection successful");
 
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            // Read the file name from the client
-            String fileName = bufferedReader.readLine();
+                // Read the file name from the client
+                String fileName = bufferedReader.readLine();
 
-            // Use the received file name to create the output file path
-            String outputFilePath = "C:/Users/Morte/IdeaProjects/ArrayListLinkedListSetMap/NetworkCommunication/src/FileTransfer/Client/" + fileName;
+                // Read the file size from the client
+                long fileSize = Long.parseLong(bufferedReader.readLine());
 
-            // Read the file size from the client
-            long fileSize = Long.parseLong(bufferedReader.readLine());
-            System.out.println("Expected filesize: " + fileSize + " bytes.");
-
-            // Receive the file data
-            InputStream inputStream = socket.getInputStream();
-            try (FileOutputStream fileOutputStream = new FileOutputStream(outputFilePath);
-                 BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream)) {
-
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                long totalBytesRead = 0;
-
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    bufferedOutputStream.write(buffer, 0, bytesRead);
-                    totalBytesRead += bytesRead;
-
-                    if (totalBytesRead >= fileSize) {
-                        break;
-                    }
+                // Check if the file size exceeds the buffer size
+                if (fileSize > bufferSize) {
+                    System.out.println("File size exceeds the buffer limit of " + bufferSize + " bytes.");
+                    return;
                 }
 
+                System.out.println("Expected filesize: " + fileSize + " bytes.");
 
-                System.out.println("File has been received and saved as " + outputFilePath);
+                // Use the received file name to create the output file path
+                String outputFilePath = "C:/Users/Morte/IdeaProjects/ArrayListLinkedListSetMap/NetworkCommunication/src/FileTransfer/Client/" + fileName;
+
+                // Receive the file data
+                try (InputStream inputStream = socket.getInputStream();
+                     FileOutputStream fileOutputStream = new FileOutputStream(outputFilePath);
+                     BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream)) {
+
+                    byte[] buffer = new byte[bufferSize];
+                    int bytesRead;
+                    long totalBytesRead = 0;
+
+                    // Read file content from input stream
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        bufferedOutputStream.write(buffer, 0, bytesRead);
+                        totalBytesRead += bytesRead;
+
+                        if (totalBytesRead >= fileSize) {
+                            break; // Stop reading when expected file size is reached
+                        }
+                    }
+
+                    // Ensure all data is written to disk
+                    bufferedOutputStream.flush();
+                    System.out.println("File has been received and saved as " + outputFilePath);
+                }
+
+            } catch (IOException ex) {
+                System.out.println("Error while receiving the file: " + ex.getMessage());
             }
+
         } catch (IOException ex) {
-            ex.printStackTrace();
+            System.out.println("Server error: " + ex.getMessage());
         }
     }
 }
