@@ -7,7 +7,8 @@ public class FileClient {
     public static void main(String[] args) {
         String hostname = "localhost";
         int port = 5000;
-        String filePath = "C:/Users/Morte/IdeaProjects/ArrayListLinkedListSetMap/NetworkCommunication/src/FileTransfer/Server/file.txt";
+        String fileName = "file.txt";
+        String filePath = "C:/Users/Morte/IdeaProjects/ArrayListLinkedListSetMap/NetworkCommunication/src/FileTransfer/Server/" + fileName;
 
         File file = new File(filePath);
 

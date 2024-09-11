@@ -15,16 +15,17 @@ public class FileServer {
 
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            // Læs filnavnet fra klienten
+            // Read the file name from the client
             String fileName = bufferedReader.readLine();
-            // Opdateret sti til serverens mappe
-            String outputFilePath = "C:/Users/Morte/IdeaProjects/ArrayListLinkedListSetMap/NetworkCommunication/src/FileTransfer/Client/file.txt";
 
-            // Læs filens størrelse fra klienten
+            // Use the received file name to create the output file path
+            String outputFilePath = "C:/Users/Morte/IdeaProjects/ArrayListLinkedListSetMap/NetworkCommunication/src/FileTransfer/Client/" + fileName;
+
+            // Read the file size from the client
             long fileSize = Long.parseLong(bufferedReader.readLine());
             System.out.println("Expected filesize: " + fileSize + " bytes.");
 
-            // Modtag filens data
+            // Receive the file data
             InputStream inputStream = socket.getInputStream();
             try (FileOutputStream fileOutputStream = new FileOutputStream(outputFilePath);
                  BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream)) {
